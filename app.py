@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import uuid
 from datetime import datetime
@@ -14,16 +15,26 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 
 APP_DIR = Path(__file__).resolve().parent
-DATA_PATH = APP_DIR / "data" / "transacciones.json"
 
 app = Flask(__name__)
 
 
+def data_path() -> Path:
+    """JSON de movimientos. En Vercel el despliegue es de solo lectura salvo /tmp."""
+    override = os.environ.get("GESTOR_DATA_PATH", "").strip()
+    if override:
+        return Path(override)
+    if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
+        return Path("/tmp/transacciones.json")
+    return APP_DIR / "data" / "transacciones.json"
+
+
 def load_rows() -> list[dict]:
-    if not DATA_PATH.is_file():
+    path = data_path()
+    if not path.is_file():
         return []
     try:
-        raw = json.loads(DATA_PATH.read_text(encoding="utf-8"))
+        raw = json.loads(path.read_text(encoding="utf-8"))
         if isinstance(raw, list):
             return [r for r in raw if isinstance(r, dict)]
     except (json.JSONDecodeError, OSError):
@@ -32,8 +43,9 @@ def load_rows() -> list[dict]:
 
 
 def save_rows(rows: list[dict]) -> None:
-    DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
-    DATA_PATH.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
+    path = data_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def compute_saldos(rows: list[dict]) -> list[float]:
