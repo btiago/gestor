@@ -56,6 +56,80 @@
       display: inline-block;
     }
 
+    .toolbar-spacer {
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .menu-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .menu-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.5rem;
+      height: 2.5rem;
+      padding: 0;
+      border-radius: 3px;
+    }
+
+    .menu-btn svg {
+      display: block;
+    }
+
+    .menu-dropdown {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 4px);
+      min-width: 200px;
+      padding: 0.35rem;
+      margin: 0;
+      list-style: none;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+      z-index: 50;
+    }
+
+    .menu-dropdown[hidden] {
+      display: none !important;
+    }
+
+    .menu-dropdown form {
+      margin: 0;
+    }
+
+    .menu-danger {
+      width: 100%;
+      text-align: left;
+      background: #fff;
+      color: #991b1b;
+      border-color: #fecaca;
+      font-weight: 600;
+      padding: 0.55rem 0.65rem;
+    }
+
+    .menu-danger:hover {
+      background: #fef2f2;
+      color: #7f1d1d;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
     .form-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -286,9 +360,22 @@
 
     <div class="toolbar">
       <a class="button secondary" href="{{ url_for('exportar') }}">Descargar Excel</a>
-      <p class="hint" style="margin:0; flex:1; min-width:200px;">
+      <p class="hint toolbar-spacer" style="margin:0;">
         El archivo usa las mismas columnas que la tabla; podés editarlo y volver a importarlo.
       </p>
+      <div class="menu-wrap">
+        <button type="button" class="secondary menu-btn" id="menu-toggle" aria-expanded="false" aria-haspopup="true" aria-controls="menu-mas" title="Más opciones">
+          <span class="sr-only">Más opciones</span>
+          <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="currentColor" d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/>
+          </svg>
+        </button>
+        <div class="menu-dropdown" id="menu-mas" role="menu" hidden>
+          <form method="post" action="{{ url_for('limpiar') }}" onsubmit="return confirm('¿Borrar todos los movimientos?');">
+            <button type="submit" class="menu-danger" role="menuitem">Borrar todo</button>
+          </form>
+        </div>
+      </div>
     </div>
 
     <form id="form-agregar" method="post" action="{{ url_for('agregar') }}" autocomplete="off"></form>
@@ -319,10 +406,6 @@
       </div>
       <div class="form-actions">
         <button form="form-agregar" type="submit">Añadir fila</button>
-        <form method="post" action="{{ url_for('limpiar') }}" style="display:inline;"
-          onsubmit="return confirm('¿Borrar todos los movimientos?');">
-          <button type="submit" class="secondary">Borrar todo</button>
-        </form>
       </div>
     </div>
 
@@ -389,6 +472,30 @@
         var d = new Date();
         input.value = d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
         input.focus();
+      });
+    })();
+    (function () {
+      var toggle = document.getElementById("menu-toggle");
+      var menu = document.getElementById("menu-mas");
+      var wrap = toggle && toggle.closest(".menu-wrap");
+      if (!toggle || !menu || !wrap) return;
+
+      function setOpen(open) {
+        menu.hidden = !open;
+        toggle.setAttribute("aria-expanded", open ? "true" : "false");
+      }
+
+      toggle.addEventListener("click", function (e) {
+        e.stopPropagation();
+        setOpen(menu.hidden);
+      });
+
+      document.addEventListener("click", function (e) {
+        if (!wrap.contains(e.target)) setOpen(false);
+      });
+
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") setOpen(false);
       });
     })();
   </script>
